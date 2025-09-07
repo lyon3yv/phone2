@@ -41,6 +41,12 @@ export default function HomeScreen({ onAppSelect }) {
       name: "Admin Panel",
       icon: "fas fa-shield-alt",
       gradient: "from-blue-600 via-purple-600 to-blue-800"
+    },
+    {
+      id: "restaurant",
+      name: "Restaurants",
+      icon: "fas fa-utensils",
+      gradient: "from-orange-500 via-red-500 to-pink-500"
     }
   ];
 

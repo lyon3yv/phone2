@@ -1,10 +1,12 @@
-# TODO: Fix Admin Login Error and Create New Admin User
+# TODO - Solución del problema del admin
 
-## Steps to Complete
+## Estado actual
+- [x] Identificar problema: referencias incorrectas `storage_1.storage` en lugar de `storage`
+- [ ] Corregir todas las referencias en routes.js
+- [ ] Verificar que el servidor compile correctamente
+- [ ] Probar rutas de admin
+- [ ] Confirmar funcionalidad completa
 
-- [ ] Investigate admin login error in server/storage.js and server/routes.js
-- [ ] Implement initializeSampleData method in MemStorage class to create default admin user
-- [ ] Create new secure admin user with strong password
-- [ ] Hash and store the admin password securely
-- [ ] Provide username and encrypted password to user
-- [ ] Test admin login functionality
+## Referencias a corregir encontradas:
+- Múltiples llamadas a `storage_1.storage` en rutas de Instagram, Tinder, Wallapop, WhatsApp, Darkweb y Admin
+- Todas deben cambiarse a solo `storage`

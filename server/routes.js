@@ -60,6 +60,7 @@ var __rest = (this && this.__rest) || function (s, e) {
 import { createServer } from "http";
 import { storage } from "./storage.js";
 import * as schema from "../shared/schema.js";
+import { insertRegistrationCodeSchema } from "../shared/insertRegistrationCodeSchema.js";
 import { CryptoService } from "./crypto.js";
 function registerRoutes(app) {
     return __awaiter(this, void 0, Promise, function () {
@@ -78,7 +79,7 @@ function registerRoutes(app) {
                             if (!registrationCode) {
                                 return [2 /*return*/, res.status(400).json({ message: "Registration code is required" })];
                             }
-                            return [4 /*yield*/, storage_1.storage.getRegistrationCode(registrationCode)];
+                            return [4 /*yield*/, storage.getRegistrationCode(registrationCode)];
                         case 1:
                             codeVerification = _b.sent();
                             if (!codeVerification) {
@@ -94,10 +95,10 @@ function registerRoutes(app) {
                                 return [2 /*return*/, res.status(400).json({ message: "Registration code expired" })];
                             }
                             validatedUserData = schema_1.insertInstagramUserSchema.parse(userData);
-                            return [4 /*yield*/, storage_1.storage.getInstagramUserByUsername(validatedUserData.username)];
+                            return [4 /*yield*/, storage.getInstagramUserByUsername(validatedUserData.username)];
                         case 2:
                             existingUsername = _b.sent();
-                            return [4 /*yield*/, storage_1.storage.getInstagramUserByEmail(validatedUserData.email)];
+                            return [4 /*yield*/, storage.getInstagramUserByEmail(validatedUserData.email)];
                         case 3:
                             existingEmail = _b.sent();
                             if (existingUsername) {
@@ -106,11 +107,11 @@ function registerRoutes(app) {
                             if (existingEmail) {
                                 return [2 /*return*/, res.status(400).json({ message: "Email already exists" })];
                             }
-                            return [4 /*yield*/, storage_1.storage.createInstagramUser(validatedUserData)];
+                            return [4 /*yield*/, storage.createInstagramUser(validatedUserData)];
                         case 4:
                             user = _b.sent();
                             // Mark registration code as used
-                            return [4 /*yield*/, storage_1.storage.markRegistrationCodeAsUsed(registrationCode, userData.username)];
+                            return [4 /*yield*/, storage.markRegistrationCodeAsUsed(registrationCode, userData.username)];
                         case 5:
                             // Mark registration code as used
                             _b.sent();
@@ -131,11 +132,11 @@ function registerRoutes(app) {
                         case 0:
                             _c.trys.push([0, 5, , 6]);
                             _a = req.body, username = _a.username, password = _a.password;
-                            return [4 /*yield*/, storage_1.storage.getInstagramUserByUsername(username)];
+                            return [4 /*yield*/, storage.getInstagramUserByUsername(username)];
                         case 1:
                             _b = (_c.sent());
                             if (_b) return [3 /*break*/, 3];
-                            return [4 /*yield*/, storage_1.storage.getInstagramUserByEmail(username)];
+                            return [4 /*yield*/, storage.getInstagramUserByEmail(username)];
                         case 2:
                             _b = (_c.sent());
                             _c.label = 3;
@@ -144,7 +145,7 @@ function registerRoutes(app) {
                             if (!user) {
                                 return [2 /*return*/, res.status(401).json({ message: "Invalid credentials" })];
                             }
-                            return [4 /*yield*/, storage_1.storage.verifyInstagramPassword(user.email, password)];
+                            return [4 /*yield*/, storage.verifyInstagramPassword(user.email, password)];
                         case 4:
                             isValidPassword = _c.sent();
                             if (!isValidPassword) {
@@ -167,14 +168,14 @@ function registerRoutes(app) {
                     switch (_a.label) {
                         case 0:
                             _a.trys.push([0, 3, , 4]);
-                            return [4 /*yield*/, storage_1.storage.getInstagramPosts()];
+                            return [4 /*yield*/, storage.getInstagramPosts()];
                         case 1:
                             posts = _a.sent();
                             return [4 /*yield*/, Promise.all(posts.map(function (post) { return __awaiter(_this, void 0, void 0, function () {
                                     var user;
                                     return __generator(this, function (_a) {
                                         switch (_a.label) {
-                                            case 0: return [4 /*yield*/, storage_1.storage.getInstagramUser(post.userId)];
+                                            case 0: return [4 /*yield*/, storage.getInstagramUser(post.userId)];
                                             case 1:
                                                 user = _a.sent();
                                                 return [2 /*return*/, __assign(__assign({}, post), { username: (user === null || user === void 0 ? void 0 : user.username) || "unknown" })];
@@ -249,7 +250,7 @@ function registerRoutes(app) {
                                     var user;
                                     return __generator(this, function (_a) {
                                         switch (_a.label) {
-                                            case 0: return [4 /*yield*/, storage_1.storage.getInstagramUser(comment.userId)];
+                                            case 0: return [4 /*yield*/, storage.getInstagramUser(comment.userId)];
                                             case 1:
                                                 user = _a.sent();
                                                 return [2 /*return*/, __assign(__assign({}, comment), { username: (user === null || user === void 0 ? void 0 : user.username) || "unknown" })];
@@ -1282,22 +1283,24 @@ function registerRoutes(app) {
                         case 0:
                             _b.trys.push([0, 4, , 5]);
                             _a = req.body, username = _a.username, password = _a.password;
-                            return [4 /*yield*/, storage_1.storage.verifyAdminPassword(username, password)];
+                            return [4 /*yield*/, storage.verifyAdminPassword(username, password)];
                         case 1:
                             admin = _b.sent();
                             if (!admin) {
                                 return [2 /*return*/, res.status(401).json({ message: "Invalid credentials or admin already used" })];
                             }
                             if (!admin.isOneTimeUse) return [3 /*break*/, 3];
-                            return [4 /*yield*/, storage_1.storage.markAdminUserAsUsed(admin.id)];
+                            return [4 /*yield*/, storage.markAdminUserAsUsed(admin.id)];
                         case 2:
                             _b.sent();
                             _b.label = 3;
                         case 3:
+                            console.log("Admin login success:", admin.username);
                             res.json({ admin: __assign(__assign({}, admin), { password: undefined }) });
                             return [3 /*break*/, 5];
                         case 4:
                             error_44 = _b.sent();
+                            console.error("Admin login error:", error_44);
                             res.status(500).json({ message: "Login failed" });
                             return [3 /*break*/, 5];
                         case 5: return [2 /*return*/];
@@ -1319,14 +1322,14 @@ function registerRoutes(app) {
                             _c.label = 1;
                         case 1:
                             if (!(i < count)) return [3 /*break*/, 4];
-                            code = crypto_1.CryptoService.generateToken(8).toUpperCase();
-                            codeData = schema_1.insertRegistrationCodeSchema.parse({
+                            code = CryptoService.generateToken(8).toUpperCase();
+                            codeData = insertRegistrationCodeSchema.parse({
                                 code: code,
                                 appType: appType,
                                 createdBy: adminId,
                                 expiresAt: expiresAt ? new Date(expiresAt) : null
                             });
-                            return [4 /*yield*/, storage_1.storage.createRegistrationCode(codeData)];
+                            return [4 /*yield*/, storage.createRegistrationCode(codeData)];
                         case 2:
                             createdCode = _c.sent();
                             codes.push(createdCode);
@@ -1354,11 +1357,11 @@ function registerRoutes(app) {
                             _a = req.query, adminId = _a.adminId, appType = _a.appType;
                             codes = void 0;
                             if (!adminId) return [3 /*break*/, 2];
-                            return [4 /*yield*/, storage_1.storage.getRegistrationCodesByAdmin(adminId)];
+                            return [4 /*yield*/, storage.getRegistrationCodesByAdmin(adminId)];
                         case 1:
                             codes = _b.sent();
                             return [3 /*break*/, 4];
-                        case 2: return [4 /*yield*/, storage_1.storage.getUnusedRegistrationCodes(appType)];
+                        case 2: return [4 /*yield*/, storage.getUnusedRegistrationCodes(appType)];
                         case 3:
                             codes = _b.sent();
                             _b.label = 4;
@@ -1380,7 +1383,7 @@ function registerRoutes(app) {
                         case 0:
                             _b.trys.push([0, 2, , 3]);
                             _a = req.body, code = _a.code, appType = _a.appType;
-                            return [4 /*yield*/, storage_1.storage.getRegistrationCode(code)];
+                            return [4 /*yield*/, storage.getRegistrationCode(code)];
                         case 1:
                             registrationCode = _b.sent();
                             if (!registrationCode) {
@@ -1412,7 +1415,7 @@ function registerRoutes(app) {
                         case 0:
                             _b.trys.push([0, 2, , 3]);
                             _a = req.body, code = _a.code, usedBy = _a.usedBy;
-                            return [4 /*yield*/, storage_1.storage.markRegistrationCodeAsUsed(code, usedBy)];
+                            return [4 /*yield*/, storage.markRegistrationCodeAsUsed(code, usedBy)];
                         case 1:
                             _b.sent();
                             res.json({ success: true });
@@ -1421,6 +1424,56 @@ function registerRoutes(app) {
                             error_48 = _b.sent();
                             res.status(500).json({ message: "Failed to mark code as used" });
                             return [3 /*break*/, 3];
+                        case 3: return [2 /*return*/];
+                    }
+                });
+            }); });
+            // Restaurant routes
+            app.get("/api/restaurants", function (req, res) { return __awaiter(_this, void 0, void 0, function () {
+                var restaurants, error_49;
+                return __generator(this, function (_a) {
+                    switch (_a.label) {
+                        case 0:
+                            _a.trys.push([0, 2, , 3]);
+                            restaurants = [
+                                {
+                                    id: "1",
+                                    name: "Bella Italia",
+                                    address: "123 Main St, City",
+                                    phone: "(555) 123-4567",
+                                    hours: "9:00 AM - 10:00 PM",
+                                    rating: 4.5,
+                                    cuisine: "Italian",
+                                    description: "Authentic Italian cuisine with fresh ingredients and traditional recipes."
+                                },
+                                {
+                                    id: "2",
+                                    name: "Sakura Sushi",
+                                    address: "456 Oak Ave, City",
+                                    phone: "(555) 234-5678",
+                                    hours: "11:00 AM - 11:00 PM",
+                                    rating: 4.7,
+                                    cuisine: "Japanese",
+                                    description: "Fresh sushi and Japanese specialties prepared by master chefs."
+                                },
+                                {
+                                    id: "3",
+                                    name: "Taco Fiesta",
+                                    address: "789 Pine St, City",
+                                    phone: "(555) 345-6789",
+                                    hours: "10:00 AM - 12:00 AM",
+                                    rating: 4.3,
+                                    cuisine: "Mexican",
+                                    description: "Authentic Mexican street food and traditional dishes."
+                                }
+                            ];
+                            res.json(restaurants);
+                            return [3 /*break*/, 3];
+                        case 1:
+                            error_49 = _a.sent();
+                            res.status(500).json({ message: "Failed to fetch restaurants" });
+                            return [3 /*break*/, 3];
+                        case 2: return [2 /*return*/];
                         case 3: return [2 /*return*/];
                     }
                 });

@@ -89,7 +89,8 @@ var MemStorage = /** @class */ (function () {
                         adminUser = {
                             username: "admin",
                             password: "SecureAdminPass123!",
-                            isOneTimeUse: false
+                            isOneTimeUse: false,
+                            isUsed: false
                         };
                         return [4 /*yield*/, this.createAdminUser(adminUser)];
                     case 1:

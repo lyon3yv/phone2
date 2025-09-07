@@ -8,6 +8,7 @@ import WhatsApp from "@/components/apps/whatsapp";
 import Darkweb from "@/components/apps/darkweb";
 import FlappyBird from "@/components/apps/flappy-bird";
 import Admin from "@/components/apps/admin";
+import Restaurant from "@/components/apps/restaurant";
 
 export default function PhoneSimulator() {
   const [currentApp, setCurrentApp] = useState("home");
@@ -28,6 +29,8 @@ export default function PhoneSimulator() {
         return React.createElement(FlappyBird, { onBack: () => setCurrentApp("home") });
       case "admin":
         return React.createElement(Admin, { onBack: () => setCurrentApp("home") });
+      case "restaurant":
+        return React.createElement(Restaurant, { onBack: () => setCurrentApp("home") });
       default:
         return React.createElement(HomeScreen, { onAppSelect: setCurrentApp });
     }
