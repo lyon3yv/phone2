@@ -8,7 +8,8 @@ import {
   type WhatsappUser, type InsertWhatsappUser, type WhatsappChat, type InsertWhatsappChat,
   type WhatsappMessage, type InsertWhatsappMessage,
   type DarkwebUser, type InsertDarkwebUser, type DarkwebChannel, type InsertDarkwebChannel,
-  type DarkwebMessage, type InsertDarkwebMessage
+  type DarkwebMessage, type InsertDarkwebMessage,
+  type AdminUser, type InsertAdminUser, type RegistrationCode, type InsertRegistrationCode
 } from "@shared/schema";
 import { randomUUID } from "crypto";
 import { CryptoService } from "./crypto";
@@ -80,6 +81,18 @@ export interface IStorage {
   createDarkwebMessage(message: InsertDarkwebMessage): Promise<DarkwebMessage>;
   getDarkwebMessages(channelId: string): Promise<DarkwebMessage[]>;
   updateUserOnlineStatus(userId: string, isOnline: boolean): Promise<void>;
+
+  // Admin System
+  getAdminUser(id: string): Promise<AdminUser | undefined>;
+  getAdminUserByUsername(username: string): Promise<AdminUser | undefined>;
+  createAdminUser(user: InsertAdminUser): Promise<AdminUser>;
+  verifyAdminPassword(username: string, password: string): Promise<AdminUser | null>;
+  markAdminUserAsUsed(id: string): Promise<void>;
+  createRegistrationCode(code: InsertRegistrationCode): Promise<RegistrationCode>;
+  getRegistrationCode(code: string): Promise<RegistrationCode | undefined>;
+  getRegistrationCodesByAdmin(adminId: string): Promise<RegistrationCode[]>;
+  markRegistrationCodeAsUsed(code: string, usedBy: string): Promise<void>;
+  getUnusedRegistrationCodes(appType?: string): Promise<RegistrationCode[]>;
 }
 
 export class MemStorage implements IStorage {
@@ -100,6 +113,8 @@ export class MemStorage implements IStorage {
   private darkwebUsers: Map<string, DarkwebUser> = new Map();
   private darkwebChannels: Map<string, DarkwebChannel> = new Map();
   private darkwebMessages: Map<string, DarkwebMessage> = new Map();
+  private adminUsers: Map<string, AdminUser> = new Map();
+  private registrationCodes: Map<string, RegistrationCode> = new Map();
 
   constructor() {
     this.initializeSampleData();
@@ -209,6 +224,19 @@ export class MemStorage implements IStorage {
       sentAt: new Date()
     };
     this.darkwebMessages.set(sampleDarkwebMessage.id, sampleDarkwebMessage);
+
+    // Add initial admin user (one-time use)
+    const hashedAdminPassword = await CryptoService.hashPassword("admin2025!");
+    const initialAdminUser: AdminUser = {
+      id: "admin-initial-1",
+      username: "admin_inicial",
+      password: hashedAdminPassword,
+      isOneTimeUse: true,
+      isUsed: false,
+      createdAt: new Date(),
+      usedAt: null
+    };
+    this.adminUsers.set(initialAdminUser.id, initialAdminUser);
   }
 
   // Instagram methods
@@ -712,6 +740,92 @@ export class MemStorage implements IStorage {
       user.lastSeen = new Date();
       this.darkwebUsers.set(userId, user);
     }
+  }
+
+  // Admin System Implementation
+  async getAdminUser(id: string): Promise<AdminUser | undefined> {
+    return this.adminUsers.get(id);
+  }
+
+  async getAdminUserByUsername(username: string): Promise<AdminUser | undefined> {
+    return Array.from(this.adminUsers.values()).find(user => user.username === username);
+  }
+
+  async createAdminUser(insertUser: InsertAdminUser): Promise<AdminUser> {
+    const id = randomUUID();
+    const hashedPassword = await CryptoService.hashPassword(insertUser.password);
+    const user: AdminUser = {
+      ...insertUser,
+      id,
+      password: hashedPassword,
+      createdAt: new Date(),
+      usedAt: null
+    };
+    this.adminUsers.set(id, user);
+    return user;
+  }
+
+  async verifyAdminPassword(username: string, password: string): Promise<AdminUser | null> {
+    const user = await this.getAdminUserByUsername(username);
+    if (!user) return null;
+    
+    // Check if it's a one-time use admin that's already been used
+    if (user.isOneTimeUse && user.isUsed) {
+      return null;
+    }
+
+    const isValid = await CryptoService.verifyPassword(password, user.password);
+    if (isValid) {
+      return user;
+    }
+    return null;
+  }
+
+  async markAdminUserAsUsed(id: string): Promise<void> {
+    const user = this.adminUsers.get(id);
+    if (user && user.isOneTimeUse) {
+      user.isUsed = true;
+      user.usedAt = new Date();
+      this.adminUsers.set(id, user);
+    }
+  }
+
+  async createRegistrationCode(insertCode: InsertRegistrationCode): Promise<RegistrationCode> {
+    const id = randomUUID();
+    const code: RegistrationCode = {
+      ...insertCode,
+      id,
+      createdAt: new Date(),
+      usedAt: null
+    };
+    this.registrationCodes.set(insertCode.code, code);
+    return code;
+  }
+
+  async getRegistrationCode(code: string): Promise<RegistrationCode | undefined> {
+    return this.registrationCodes.get(code);
+  }
+
+  async getRegistrationCodesByAdmin(adminId: string): Promise<RegistrationCode[]> {
+    return Array.from(this.registrationCodes.values())
+      .filter(code => code.createdBy === adminId)
+      .sort((a, b) => new Date(b.createdAt!).getTime() - new Date(a.createdAt!).getTime());
+  }
+
+  async markRegistrationCodeAsUsed(code: string, usedBy: string): Promise<void> {
+    const regCode = this.registrationCodes.get(code);
+    if (regCode && !regCode.isUsed) {
+      regCode.isUsed = true;
+      regCode.usedBy = usedBy;
+      regCode.usedAt = new Date();
+      this.registrationCodes.set(code, regCode);
+    }
+  }
+
+  async getUnusedRegistrationCodes(appType?: string): Promise<RegistrationCode[]> {
+    return Array.from(this.registrationCodes.values())
+      .filter(code => !code.isUsed && (!appType || code.appType === appType))
+      .sort((a, b) => new Date(b.createdAt!).getTime() - new Date(a.createdAt!).getTime());
   }
 }
 
