@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { useQuery, useMutation } from "@tanstack/react-query";
 import { apiRequest, queryClient } from "@/lib/queryClient";
 import { Button } from "@/components/ui/button";
@@ -6,7 +6,8 @@ import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { useToast } from "@/hooks/use-toast";
-import { ArrowLeft, Hash, Users, Shield, Eye, Send, Plus, Lock } from "lucide-react";
+import { ArrowLeft, Hash, Users, Shield, Eye, Send, Plus, Lock, Camera, Image } from "lucide-react";
+import { validateImageFile, compressImage } from "@/lib/fileUtils";
 import type { DarkwebUser, DarkwebChannel } from "@shared/schema";
 
 interface DarkwebProps {
@@ -18,6 +19,9 @@ export default function Darkweb({ onBack }: DarkwebProps) {
   const [showRegister, setShowRegister] = useState(true);
   const [selectedChannel, setSelectedChannel] = useState<any>(null);
   const [messageInput, setMessageInput] = useState("");
+  const [selectedImage, setSelectedImage] = useState<string | null>(null);
+  const [uploadingImage, setUploadingImage] = useState(false);
+  const fileInputRef = useRef<HTMLInputElement>(null);
   const { toast } = useToast();
 
   const { data: channels } = useQuery({
@@ -102,16 +106,44 @@ export default function Darkweb({ onBack }: DarkwebProps) {
     });
   };
 
+  const handleImageUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    
+    setUploadingImage(true);
+    
+    try {
+      validateImageFile(file);
+      const compressedImage = await compressImage(file);
+      setSelectedImage(compressedImage);
+      toast({ title: "Imagen cargada", description: "Lista para enviar" });
+    } catch (error: any) {
+      toast({ title: "Error", description: error.message, variant: "destructive" });
+    } finally {
+      setUploadingImage(false);
+      if (fileInputRef.current) {
+        fileInputRef.current.value = '';
+      }
+    }
+  };
+
   const handleSendMessage = (e: React.FormEvent) => {
     e.preventDefault();
-    if (!messageInput.trim() || !currentUser) return;
+    if ((!messageInput.trim() && !selectedImage) || !currentUser) return;
     
-    sendMessageMutation.mutate({
+    const messageData: any = {
       senderId: currentUser.id,
-      content: messageInput,
-      messageType: "text",
+      content: messageInput || "[Imagen adjunta]",
+      messageType: selectedImage ? "image" : "text",
       isEncrypted: false,
-    });
+    };
+
+    if (selectedImage) {
+      messageData.attachmentUrl = selectedImage;
+    }
+    
+    sendMessageMutation.mutate(messageData);
+    setSelectedImage(null);
   };
 
   const handleCreateChannel = (e: React.FormEvent<HTMLFormElement>) => {
@@ -282,7 +314,21 @@ export default function Darkweb({ onBack }: DarkwebProps) {
                   )}
                 </div>
                 <div className="text-green-300 font-mono text-sm">
-                  {message.content}
+                  {message.messageType === "image" && message.attachmentUrl ? (
+                    <div className="space-y-2">
+                      <img 
+                        src={message.attachmentUrl} 
+                        alt="Imagen adjunta" 
+                        className="max-w-full max-h-64 rounded border border-green-500/30 cursor-pointer hover:border-green-400"
+                        onClick={() => window.open(message.attachmentUrl, '_blank')}
+                      />
+                      {message.content !== "[Imagen adjunta]" && (
+                        <div>{message.content}</div>
+                      )}
+                    </div>
+                  ) : (
+                    <div>{message.content}</div>
+                  )}
                 </div>
               </div>
             ))
@@ -294,17 +340,59 @@ export default function Darkweb({ onBack }: DarkwebProps) {
         </div>
 
         <div className="border-t border-green-500/30 p-4 bg-gray-900">
+          {selectedImage && (
+            <div className="mb-3 p-2 bg-black border border-green-500/30 rounded">
+              <div className="flex items-center justify-between mb-2">
+                <span className="text-green-400 font-mono text-sm">Imagen seleccionada:</span>
+                <Button 
+                  onClick={() => setSelectedImage(null)}
+                  variant="ghost"
+                  size="sm"
+                  className="text-red-400 hover:text-red-300"
+                >
+                  ✕
+                </Button>
+              </div>
+              <img 
+                src={selectedImage} 
+                alt="Preview" 
+                className="max-w-full max-h-24 rounded border border-green-500/50"
+              />
+            </div>
+          )}
           <form onSubmit={handleSendMessage} className="flex gap-2">
+            <div className="flex gap-1">
+              <Button 
+                type="button"
+                onClick={() => fileInputRef.current?.click()}
+                disabled={uploadingImage}
+                className="bg-gray-600 hover:bg-gray-700 text-green-400 border border-green-500/50"
+                data-testid="button-attach-image"
+              >
+                {uploadingImage ? (
+                  <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-green-400"></div>
+                ) : (
+                  <Camera className="h-4 w-4" />
+                )}
+              </Button>
+              <input
+                ref={fileInputRef}
+                type="file"
+                accept="image/*"
+                onChange={handleImageUpload}
+                className="hidden"
+              />
+            </div>
             <Input
               value={messageInput}
               onChange={(e) => setMessageInput(e.target.value)}
-              placeholder="Escribe un mensaje anónimo..."
+              placeholder={selectedImage ? "Añadir descripción (opcional)..." : "Escribe un mensaje anónimo..."}
               className="flex-1 bg-black border-green-500/50 text-green-400 placeholder:text-green-600 font-mono"
               data-testid="input-message"
             />
             <Button 
               type="submit" 
-              disabled={!messageInput.trim() || sendMessageMutation.isPending}
+              disabled={(!messageInput.trim() && !selectedImage) || sendMessageMutation.isPending}
               className="bg-green-600 hover:bg-green-700 text-black font-mono"
               data-testid="button-send-message"
             >

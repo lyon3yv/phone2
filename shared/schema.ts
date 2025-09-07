@@ -170,6 +170,7 @@ export const darkwebMessages = pgTable("darkweb_messages", {
   senderId: varchar("sender_id").references(() => darkwebUsers.id).notNull(),
   content: text("content").notNull(),
   messageType: text("message_type").default("text"), // text, encrypted, image
+  attachmentUrl: text("attachment_url"), // For image attachments
   isEncrypted: boolean("is_encrypted").default(false),
   replyToId: varchar("reply_to_id"),
   sentAt: timestamp("sent_at").defaultNow(),
