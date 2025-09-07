@@ -175,6 +175,29 @@ export const darkwebMessages = pgTable("darkweb_messages", {
   sentAt: timestamp("sent_at").defaultNow(),
 });
 
+// Admin System
+export const adminUsers = pgTable("admin_users", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  username: text("username").notNull().unique(),
+  password: text("password").notNull(),
+  isOneTimeUse: boolean("is_one_time_use").default(true),
+  isUsed: boolean("is_used").default(false),
+  createdAt: timestamp("created_at").defaultNow(),
+  usedAt: timestamp("used_at"),
+});
+
+export const registrationCodes = pgTable("registration_codes", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  code: text("code").notNull().unique(),
+  isUsed: boolean("is_used").default(false),
+  usedBy: text("used_by"),
+  appType: text("app_type").notNull(), // 'instagram', 'tinder', 'wallapop', 'whatsapp', 'darkweb'
+  createdBy: varchar("created_by").references(() => adminUsers.id).notNull(),
+  createdAt: timestamp("created_at").defaultNow(),
+  usedAt: timestamp("used_at"),
+  expiresAt: timestamp("expires_at"),
+});
+
 // Insert schemas
 export const insertInstagramUserSchema = createInsertSchema(instagramUsers).omit({ id: true, createdAt: true });
 export const insertInstagramPostSchema = createInsertSchema(instagramPosts).omit({ id: true, likes: true, commentsCount: true, createdAt: true });
@@ -193,6 +216,8 @@ export const insertWhatsappMessageSchema = createInsertSchema(whatsappMessages).
 export const insertDarkwebUserSchema = createInsertSchema(darkwebUsers).omit({ id: true, reputation: true, isOnline: true, lastSeen: true, createdAt: true });
 export const insertDarkwebChannelSchema = createInsertSchema(darkwebChannels).omit({ id: true, createdAt: true });
 export const insertDarkwebMessageSchema = createInsertSchema(darkwebMessages).omit({ id: true, sentAt: true });
+export const insertAdminUserSchema = createInsertSchema(adminUsers).omit({ id: true, createdAt: true, usedAt: true });
+export const insertRegistrationCodeSchema = createInsertSchema(registrationCodes).omit({ id: true, createdAt: true, usedAt: true });
 
 // Types
 export type InstagramUser = typeof instagramUsers.$inferSelect;
@@ -233,3 +258,8 @@ export type DarkwebChannel = typeof darkwebChannels.$inferSelect;
 export type InsertDarkwebChannel = z.infer<typeof insertDarkwebChannelSchema>;
 export type DarkwebMessage = typeof darkwebMessages.$inferSelect;
 export type InsertDarkwebMessage = z.infer<typeof insertDarkwebMessageSchema>;
+
+export type AdminUser = typeof adminUsers.$inferSelect;
+export type InsertAdminUser = z.infer<typeof insertAdminUserSchema>;
+export type RegistrationCode = typeof registrationCodes.$inferSelect;
+export type InsertRegistrationCode = z.infer<typeof insertRegistrationCodeSchema>;
