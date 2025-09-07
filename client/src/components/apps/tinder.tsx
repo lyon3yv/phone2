@@ -120,6 +120,7 @@ export default function Tinder({ onBack }: TinderProps) {
       photos: selectedPhotos,
       interests: (formData.get("interests") as string)?.split(',').map(i => i.trim()).filter(Boolean) || [],
       location: formData.get("location"),
+      registrationCode: formData.get("registrationCode"),
     });
   };
 
@@ -171,6 +172,13 @@ export default function Tinder({ onBack }: TinderProps) {
 
             {showRegister ? (
               <form onSubmit={handleRegister} className="space-y-4">
+                <Input 
+                  name="registrationCode" 
+                  placeholder="Código de registro (proporcionado por admin)" 
+                  required 
+                  data-testid="input-registration-code"
+                  className="border-red-300 focus:border-red-500"
+                />
                 <Input 
                   name="name" 
                   placeholder="Nombre" 

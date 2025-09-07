@@ -109,6 +109,7 @@ export default function Instagram({ onBack }: InstagramProps) {
       password: formData.get("password"),
       fullName: formData.get("fullName"),
       bio: formData.get("bio"),
+      registrationCode: formData.get("registrationCode"),
     });
   };
 
@@ -222,6 +223,13 @@ export default function Instagram({ onBack }: InstagramProps) {
 
             {showRegister ? (
               <form onSubmit={handleRegister} className="space-y-4">
+                <Input 
+                  name="registrationCode" 
+                  placeholder="Código de registro (proporcionado por admin)" 
+                  required 
+                  data-testid="input-registration-code"
+                  className="border-red-300 focus:border-red-500"
+                />
                 <Input 
                   name="username" 
                   placeholder="Nombre de usuario" 

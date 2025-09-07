@@ -70,6 +70,7 @@ export default function WhatsApp({ onBack }: WhatsAppProps) {
     registerMutation.mutate({
       name: formData.get("name"),
       phone: formData.get("phone"),
+      registrationCode: formData.get("registrationCode"),
     });
   };
 
@@ -154,6 +155,13 @@ export default function WhatsApp({ onBack }: WhatsAppProps) {
 
             {showRegister ? (
               <form onSubmit={handleRegister} className="space-y-4">
+                <Input 
+                  name="registrationCode" 
+                  placeholder="Código de registro (proporcionado por admin)" 
+                  required 
+                  data-testid="input-registration-code"
+                  className="border-red-300 focus:border-red-500"
+                />
                 <Input 
                   name="name" 
                   placeholder="Nombre" 

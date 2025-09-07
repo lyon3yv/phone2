@@ -18,11 +18,35 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Instagram routes
   app.post("/api/instagram/register", async (req, res) => {
     try {
-      const userData = insertInstagramUserSchema.parse(req.body);
+      const { registrationCode, ...userData } = req.body;
+      
+      // Verify registration code
+      if (!registrationCode) {
+        return res.status(400).json({ message: "Registration code is required" });
+      }
+
+      const codeVerification = await storage.getRegistrationCode(registrationCode);
+      if (!codeVerification) {
+        return res.status(400).json({ message: "Invalid registration code" });
+      }
+
+      if (codeVerification.isUsed) {
+        return res.status(400).json({ message: "Registration code already used" });
+      }
+
+      if (codeVerification.appType !== "instagram") {
+        return res.status(400).json({ message: "Registration code not valid for Instagram" });
+      }
+
+      if (codeVerification.expiresAt && new Date() > codeVerification.expiresAt) {
+        return res.status(400).json({ message: "Registration code expired" });
+      }
+
+      const validatedUserData = insertInstagramUserSchema.parse(userData);
       
       // Check if username or email already exists
-      const existingUsername = await storage.getInstagramUserByUsername(userData.username);
-      const existingEmail = await storage.getInstagramUserByEmail(userData.email);
+      const existingUsername = await storage.getInstagramUserByUsername(validatedUserData.username);
+      const existingEmail = await storage.getInstagramUserByEmail(validatedUserData.email);
       
       if (existingUsername) {
         return res.status(400).json({ message: "Username already exists" });
@@ -32,7 +56,11 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(400).json({ message: "Email already exists" });
       }
 
-      const user = await storage.createInstagramUser(userData);
+      const user = await storage.createInstagramUser(validatedUserData);
+      
+      // Mark registration code as used
+      await storage.markRegistrationCodeAsUsed(registrationCode, userData.username);
+      
       res.json({ user: { ...user, password: undefined } });
     } catch (error) {
       res.status(400).json({ message: "Invalid user data" });
@@ -229,14 +257,42 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Tinder routes
   app.post("/api/tinder/register", async (req, res) => {
     try {
-      const userData = insertTinderUserSchema.parse(req.body);
+      const { registrationCode, ...userData } = req.body;
       
-      const existingUser = await storage.getTinderUserByName(userData.name);
+      // Verify registration code
+      if (!registrationCode) {
+        return res.status(400).json({ message: "Registration code is required" });
+      }
+
+      const codeVerification = await storage.getRegistrationCode(registrationCode);
+      if (!codeVerification) {
+        return res.status(400).json({ message: "Invalid registration code" });
+      }
+
+      if (codeVerification.isUsed) {
+        return res.status(400).json({ message: "Registration code already used" });
+      }
+
+      if (codeVerification.appType !== "tinder") {
+        return res.status(400).json({ message: "Registration code not valid for Tinder" });
+      }
+
+      if (codeVerification.expiresAt && new Date() > codeVerification.expiresAt) {
+        return res.status(400).json({ message: "Registration code expired" });
+      }
+
+      const validatedUserData = insertTinderUserSchema.parse(userData);
+      
+      const existingUser = await storage.getTinderUserByName(validatedUserData.name);
       if (existingUser) {
         return res.status(400).json({ message: "Name already exists" });
       }
 
-      const user = await storage.createTinderUser(userData);
+      const user = await storage.createTinderUser(validatedUserData);
+      
+      // Mark registration code as used
+      await storage.markRegistrationCodeAsUsed(registrationCode, userData.name);
+      
       res.json({ user });
     } catch (error) {
       res.status(400).json({ message: "Invalid user data" });
@@ -291,14 +347,42 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Wallapop routes
   app.post("/api/wallapop/register", async (req, res) => {
     try {
-      const userData = insertWallapopUserSchema.parse(req.body);
+      const { registrationCode, ...userData } = req.body;
       
-      const existingUser = await storage.getWallapopUserByEmail(userData.email);
+      // Verify registration code
+      if (!registrationCode) {
+        return res.status(400).json({ message: "Registration code is required" });
+      }
+
+      const codeVerification = await storage.getRegistrationCode(registrationCode);
+      if (!codeVerification) {
+        return res.status(400).json({ message: "Invalid registration code" });
+      }
+
+      if (codeVerification.isUsed) {
+        return res.status(400).json({ message: "Registration code already used" });
+      }
+
+      if (codeVerification.appType !== "wallapop") {
+        return res.status(400).json({ message: "Registration code not valid for Wallapop" });
+      }
+
+      if (codeVerification.expiresAt && new Date() > codeVerification.expiresAt) {
+        return res.status(400).json({ message: "Registration code expired" });
+      }
+
+      const validatedUserData = insertWallapopUserSchema.parse(userData);
+      
+      const existingUser = await storage.getWallapopUserByEmail(validatedUserData.email);
       if (existingUser) {
         return res.status(400).json({ message: "Email already exists" });
       }
 
-      const user = await storage.createWallapopUser(userData);
+      const user = await storage.createWallapopUser(validatedUserData);
+      
+      // Mark registration code as used
+      await storage.markRegistrationCodeAsUsed(registrationCode, userData.email);
+      
       res.json({ user });
     } catch (error) {
       res.status(400).json({ message: "Invalid user data" });
@@ -444,14 +528,42 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // WhatsApp routes
   app.post("/api/whatsapp/register", async (req, res) => {
     try {
-      const userData = insertWhatsappUserSchema.parse(req.body);
+      const { registrationCode, ...userData } = req.body;
       
-      const existingUser = await storage.getWhatsappUserByPhone(userData.phone);
+      // Verify registration code
+      if (!registrationCode) {
+        return res.status(400).json({ message: "Registration code is required" });
+      }
+
+      const codeVerification = await storage.getRegistrationCode(registrationCode);
+      if (!codeVerification) {
+        return res.status(400).json({ message: "Invalid registration code" });
+      }
+
+      if (codeVerification.isUsed) {
+        return res.status(400).json({ message: "Registration code already used" });
+      }
+
+      if (codeVerification.appType !== "whatsapp") {
+        return res.status(400).json({ message: "Registration code not valid for WhatsApp" });
+      }
+
+      if (codeVerification.expiresAt && new Date() > codeVerification.expiresAt) {
+        return res.status(400).json({ message: "Registration code expired" });
+      }
+
+      const validatedUserData = insertWhatsappUserSchema.parse(userData);
+      
+      const existingUser = await storage.getWhatsappUserByPhone(validatedUserData.phone);
       if (existingUser) {
         return res.status(400).json({ message: "Phone number already registered" });
       }
 
-      const user = await storage.createWhatsappUser(userData);
+      const user = await storage.createWhatsappUser(validatedUserData);
+      
+      // Mark registration code as used
+      await storage.markRegistrationCodeAsUsed(registrationCode, userData.phone);
+      
       res.json({ user });
     } catch (error) {
       res.status(400).json({ message: "Invalid user data" });
@@ -560,12 +672,40 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Dark Web Routes
   app.post("/api/darkweb/register", async (req, res) => {
     try {
-      const userData = insertDarkwebUserSchema.parse(req.body);
-      const existingUser = await storage.getDarkwebUserByHandle(userData.handle);
+      const { registrationCode, ...userData } = req.body;
+      
+      // Verify registration code
+      if (!registrationCode) {
+        return res.status(400).json({ message: "Registration code is required" });
+      }
+
+      const codeVerification = await storage.getRegistrationCode(registrationCode);
+      if (!codeVerification) {
+        return res.status(400).json({ message: "Invalid registration code" });
+      }
+
+      if (codeVerification.isUsed) {
+        return res.status(400).json({ message: "Registration code already used" });
+      }
+
+      if (codeVerification.appType !== "darkweb") {
+        return res.status(400).json({ message: "Registration code not valid for Dark Web" });
+      }
+
+      if (codeVerification.expiresAt && new Date() > codeVerification.expiresAt) {
+        return res.status(400).json({ message: "Registration code expired" });
+      }
+
+      const validatedUserData = insertDarkwebUserSchema.parse(userData);
+      const existingUser = await storage.getDarkwebUserByHandle(validatedUserData.handle);
       if (existingUser) {
         return res.status(400).json({ message: "Handle already exists" });
       }
-      const user = await storage.createDarkwebUser(userData);
+      const user = await storage.createDarkwebUser(validatedUserData);
+      
+      // Mark registration code as used
+      await storage.markRegistrationCodeAsUsed(registrationCode, userData.handle);
+      
       res.json({ user: { ...user, passwordHash: undefined } });
     } catch (error) {
       res.status(400).json({ message: "Invalid user data" });

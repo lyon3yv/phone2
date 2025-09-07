@@ -145,6 +145,7 @@ export default function Wallapop({ onBack }: WallapopProps) {
       name: formData.get("name"),
       email: formData.get("email"),
       location: formData.get("location"),
+      registrationCode: formData.get("registrationCode"),
     });
   };
 
@@ -239,6 +240,13 @@ export default function Wallapop({ onBack }: WallapopProps) {
 
             {showRegister ? (
               <form onSubmit={handleRegister} className="space-y-4">
+                <Input 
+                  name="registrationCode" 
+                  placeholder="Código de registro (proporcionado por admin)" 
+                  required 
+                  data-testid="input-registration-code"
+                  className="border-red-300 focus:border-red-500"
+                />
                 <Input 
                   name="name" 
                   placeholder="Nombre" 

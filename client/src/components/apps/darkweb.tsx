@@ -89,6 +89,7 @@ export default function Darkweb({ onBack }: DarkwebProps) {
     registerMutation.mutate({
       handle: formData.get("handle"),
       passwordHash: formData.get("password"), // Will be hashed on server
+      registrationCode: formData.get("registrationCode"),
     });
   };
 
@@ -168,6 +169,13 @@ export default function Darkweb({ onBack }: DarkwebProps) {
 
             {showRegister ? (
               <form onSubmit={handleRegister} className="space-y-4">
+                <Input 
+                  name="registrationCode" 
+                  placeholder="Código de acceso (admin)" 
+                  required 
+                  className="bg-black border-red-500/50 text-red-400 placeholder:text-red-600 font-mono"
+                  data-testid="input-registration-code"
+                />
                 <Input 
                   name="handle" 
                   placeholder="Handle anónimo (ej: Shadow_User)" 
