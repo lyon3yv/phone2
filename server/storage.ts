@@ -226,11 +226,11 @@ export class MemStorage implements IStorage {
     this.darkwebMessages.set(sampleDarkwebMessage.id, sampleDarkwebMessage);
 
     // Add initial admin user (one-time use)
-    const hashedAdminPassword = await CryptoService.hashPassword("admin2025!");
+    const hashedInitialAdminPassword = await CryptoService.hashPassword("admin2025!");
     const initialAdminUser: AdminUser = {
       id: "admin-initial-1",
       username: "admin_inicial",
-      password: hashedAdminPassword,
+      password: hashedInitialAdminPassword,
       isOneTimeUse: true,
       isUsed: false,
       createdAt: new Date(),

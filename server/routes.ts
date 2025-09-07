@@ -7,9 +7,11 @@ import {
   insertTinderUserSchema, insertTinderMatchSchema,
   insertWallapopUserSchema, insertWallapopProductSchema, insertWallapopChatSchema, insertWallapopMessageSchema,
   insertWhatsappUserSchema, insertWhatsappChatSchema, insertWhatsappMessageSchema,
-  insertDarkwebUserSchema, insertDarkwebChannelSchema, insertDarkwebMessageSchema
+  insertDarkwebUserSchema, insertDarkwebChannelSchema, insertDarkwebMessageSchema,
+  insertAdminUserSchema, insertRegistrationCodeSchema
 } from "@shared/schema";
 import { z } from "zod";
+import { CryptoService } from "./crypto";
 
 export async function registerRoutes(app: Express): Promise<Server> {
   
@@ -634,6 +636,109 @@ export async function registerRoutes(app: Express): Promise<Server> {
       res.json(message);
     } catch (error) {
       res.status(400).json({ message: "Invalid message data" });
+    }
+  });
+
+  // Admin routes
+  app.post("/api/admin/login", async (req, res) => {
+    try {
+      const { username, password } = req.body;
+      
+      const admin = await storage.verifyAdminPassword(username, password);
+      if (!admin) {
+        return res.status(401).json({ message: "Invalid credentials or admin already used" });
+      }
+
+      // Mark one-time use admin as used
+      if (admin.isOneTimeUse) {
+        await storage.markAdminUserAsUsed(admin.id);
+      }
+
+      res.json({ admin: { ...admin, password: undefined } });
+    } catch (error) {
+      res.status(500).json({ message: "Login failed" });
+    }
+  });
+
+  app.post("/api/admin/codes/generate", async (req, res) => {
+    try {
+      const { appType, adminId, count = 1, expiresAt } = req.body;
+      
+      if (!appType || !adminId) {
+        return res.status(400).json({ message: "App type and admin ID are required" });
+      }
+
+      const codes = [];
+      for (let i = 0; i < count; i++) {
+        const code = CryptoService.generateToken(8).toUpperCase();
+        const codeData = insertRegistrationCodeSchema.parse({
+          code,
+          appType,
+          createdBy: adminId,
+          expiresAt: expiresAt ? new Date(expiresAt) : null
+        });
+        const createdCode = await storage.createRegistrationCode(codeData);
+        codes.push(createdCode);
+      }
+
+      res.json({ codes });
+    } catch (error) {
+      res.status(400).json({ message: "Failed to generate codes" });
+    }
+  });
+
+  app.get("/api/admin/codes", async (req, res) => {
+    try {
+      const { adminId, appType } = req.query;
+      
+      let codes;
+      if (adminId) {
+        codes = await storage.getRegistrationCodesByAdmin(adminId as string);
+      } else {
+        codes = await storage.getUnusedRegistrationCodes(appType as string);
+      }
+
+      res.json({ codes });
+    } catch (error) {
+      res.status(500).json({ message: "Failed to fetch codes" });
+    }
+  });
+
+  app.post("/api/admin/verify-code", async (req, res) => {
+    try {
+      const { code, appType } = req.body;
+      
+      const registrationCode = await storage.getRegistrationCode(code);
+      if (!registrationCode) {
+        return res.status(404).json({ message: "Invalid code" });
+      }
+
+      if (registrationCode.isUsed) {
+        return res.status(400).json({ message: "Code already used" });
+      }
+
+      if (registrationCode.appType !== appType) {
+        return res.status(400).json({ message: "Code not valid for this app" });
+      }
+
+      if (registrationCode.expiresAt && new Date() > registrationCode.expiresAt) {
+        return res.status(400).json({ message: "Code expired" });
+      }
+
+      res.json({ valid: true });
+    } catch (error) {
+      res.status(500).json({ message: "Code verification failed" });
+    }
+  });
+
+  app.post("/api/admin/use-code", async (req, res) => {
+    try {
+      const { code, usedBy } = req.body;
+      
+      await storage.markRegistrationCodeAsUsed(code, usedBy);
+      res.json({ success: true });
+    } catch (error) {
+      res.status(500).json({ message: "Failed to mark code as used" });
     }
   });
 
