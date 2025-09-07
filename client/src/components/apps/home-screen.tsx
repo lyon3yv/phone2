@@ -35,6 +35,12 @@ export default function HomeScreen({ onAppSelect }: HomeScreenProps) {
       name: "Dark Web",
       icon: "fas fa-shield-alt",
       gradient: "from-gray-800 via-black to-green-900"
+    },
+    {
+      id: "flappybird",
+      name: "Flappy Bird",
+      icon: "fas fa-dove",
+      gradient: "from-yellow-400 via-orange-500 to-red-500"
     }
   ];
 

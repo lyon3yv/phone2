@@ -6,8 +6,9 @@ import Tinder from "@/components/apps/tinder";
 import Wallapop from "@/components/apps/wallapop";
 import WhatsApp from "@/components/apps/whatsapp";
 import Darkweb from "@/components/apps/darkweb";
+import FlappyBird from "@/components/apps/flappy-bird";
 
-export type AppType = "home" | "instagram" | "tinder" | "wallapop" | "whatsapp" | "darkweb";
+export type AppType = "home" | "instagram" | "tinder" | "wallapop" | "whatsapp" | "darkweb" | "flappybird";
 
 export default function PhoneSimulator() {
   const [currentApp, setCurrentApp] = useState<AppType>("home");
@@ -24,6 +25,8 @@ export default function PhoneSimulator() {
         return <WhatsApp onBack={() => setCurrentApp("home")} />;
       case "darkweb":
         return <Darkweb onBack={() => setCurrentApp("home")} />;
+      case "flappybird":
+        return <FlappyBird onBack={() => setCurrentApp("home")} />;
       default:
         return <HomeScreen onAppSelect={setCurrentApp} />;
     }
