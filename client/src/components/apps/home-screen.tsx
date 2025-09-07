@@ -41,6 +41,12 @@ export default function HomeScreen({ onAppSelect }: HomeScreenProps) {
       name: "Flappy Bird",
       icon: "fas fa-dove",
       gradient: "from-yellow-400 via-orange-500 to-red-500"
+    },
+    {
+      id: "admin",
+      name: "Admin Panel",
+      icon: "fas fa-shield-alt",
+      gradient: "from-blue-600 via-purple-600 to-blue-800"
     }
   ];
 
